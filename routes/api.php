@@ -27,4 +27,29 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+
+    // Test routes for permissions
+    Route::get('/permissions/check', function (Request $request) {
+        $user = $request->user();
+        return response()->json([
+            'user' => $user->only(['id', 'name', 'email']),
+            'roles' => $user->getRoleNames(),
+            'permissions' => $user->getAllPermissions()->pluck('name'),
+            'checks' => [
+                'has_admin_role' => $user->hasRole('admin'),
+                'can_edit_posts' => $user->can('edit posts'),
+                'can_delete_posts' => $user->can('delete posts'),
+            ]
+        ]);
+    });
+
+    // Protected by permission - only users with 'edit posts' can access
+    Route::middleware('permission:edit posts')->get('/posts/edit-test', function () {
+        return response()->json(['message' => 'Success! You have permission to edit posts.']);
+    });
+
+    // Protected by role - only admin users can access
+    Route::middleware('role:admin')->get('/admin/test', function () {
+        return response()->json(['message' => 'Success! You have admin role.']);
+    });
 });
